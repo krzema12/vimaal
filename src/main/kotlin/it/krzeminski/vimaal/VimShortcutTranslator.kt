@@ -14,7 +14,7 @@ class VimShortcutTranslator(
 
     private fun act(vimState: VimState): VimState {
         if (vimState.keyPressContext == "dd") {
-            textChangeListener.onLinesRemoved(IntRange(vimState.cursorPosition.row, vimState.cursorPosition.row))
+            textChangeListener.onLinesRemoved(vimState.cursorPosition.row..vimState.cursorPosition.row)
             return vimState.copy(keyPressContext = "")
         }
         return vimState
