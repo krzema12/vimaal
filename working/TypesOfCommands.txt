@@ -1,0 +1,25 @@
+Commmands
+    Working with the text - changing the contents of the buffer and e.g. copying
+        * 3dw - cut 3 words from the cursor to the right
+        * d$ or D - cut form the cursor to the end of the current line
+        * 3dd - cut 3 lines, from the cursor and below
+        * 3d$ or 3D - cut from the cursor to the end of the current line, and 2 next lines
+        * yw - copy from the cursor to the end of the current word
+        * yaw - copy the current word
+    Navigation - walking around the buffer
+        Moving the cursor
+            * arrows - by one column/row
+            * 3arrows - by 3 columns/rows
+            * j - down
+            * k - up
+            * h - left
+            * l - right
+            * 3l - 3 characters to the right
+            * 0 - to the beginning of the current line
+            * b - to the beginning of the current or nearest word to the left
+            * B - to the beginning of the current or nearest word to the left (words can contain punctuation)
+            * e - cursor to the end of the current or nearest word to the left
+            * E - cursor to the end of the current or nearest word to the right (words can contain punctuation)
+        Selection
+            * v - enable visual, character-level selection mode
+            * V - enable visual, line-level selection mode
