@@ -9,19 +9,17 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
+    jcenter()
 }
 
 dependencies {
     compile(kotlin("stdlib-jdk8"))
 
-    testCompile("io.kotlintest:kotlintest-runner-junit5:3.1.7")
+    testCompile("junit:junit:4.12")
+    testCompile("org.specnaz:specnaz-kotlin-junit:1.4")
     testImplementation("io.mockk:mockk:1.8.5")
 }
 
 tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
-}
-
-tasks.withType<Test> {
-    useJUnitPlatform()
 }

@@ -1,35 +1,36 @@
 package it.krzeminski.vimaal
 
-import io.kotlintest.specs.StringSpec
 import io.mockk.Called
 import io.mockk.spyk
 import io.mockk.verify
+import org.specnaz.kotlin.junit.SpecnazKotlinJUnit
 
-class VimShortcutTranslatorSpec : StringSpec({
+class VimShortcutTranslatorSpec : SpecnazKotlinJUnit(VimShortcutTranslator::class.simpleName!!, { it ->
+    lateinit var textChangeListenerMock: TextChangeListener
+    lateinit var vimShortcutTranslator: VimShortcutTranslator
 
-    // TODO move objects init to some 'beforeEach'
-
-    "pressing 'd' should do nothing" {
-        val textChangeListenerMock = spyk<TextChangeListener>()
-        val vimShortcutTranslator = VimShortcutTranslator(textChangeListenerMock)
-        vimShortcutTranslator.keyPressed('d')
-
-        verify { textChangeListenerMock wasNot Called }
+    it.beginsEach {
+        textChangeListenerMock = spyk()
+        vimShortcutTranslator = VimShortcutTranslator(textChangeListenerMock)
     }
 
-    "pressing 'dd' should remove one line" {
-        val textChangeListenerMock = spyk<TextChangeListener>()
-        val vimShortcutTranslator = VimShortcutTranslator(textChangeListenerMock)
-        repeat(2) { vimShortcutTranslator.keyPressed('d') }
+    it.describes("deleting") {
+        it.should("do nothing when 'd' is pressed") {
+            vimShortcutTranslator.keyPressed('d')
 
-        verify(exactly = 1) { textChangeListenerMock.onLinesRemoved(quantity = 1) }
-    }
+            verify { textChangeListenerMock wasNot Called }
+        }
 
-    "pressing 'dd' twice should remove two lines" {
-        val textChangeListenerMock = spyk<TextChangeListener>()
-        val vimShortcutTranslator = VimShortcutTranslator(textChangeListenerMock)
-        repeat(4) { vimShortcutTranslator.keyPressed('d') }
+        it.should("remove one line when 'dd' is pressed") {
+            repeat(2) { vimShortcutTranslator.keyPressed('d') }
 
-        verify(exactly = 2) { textChangeListenerMock.onLinesRemoved(quantity = 1) }
+            verify(exactly = 1) { textChangeListenerMock.onLinesRemoved(quantity = 1) }
+        }
+
+        it.should("remove two lines when 'dd' is pressed twice") {
+            repeat(4) { vimShortcutTranslator.keyPressed('d') }
+
+            verify(exactly = 2) { textChangeListenerMock.onLinesRemoved(quantity = 1) }
+        }
     }
 })
