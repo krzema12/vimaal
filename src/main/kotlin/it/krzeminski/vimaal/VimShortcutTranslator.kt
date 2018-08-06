@@ -1,22 +1,21 @@
 package it.krzeminski.vimaal
 
-import it.krzeminski.vimaal.state.VimState
-import it.krzeminski.vimaal.state.transformState
+import it.krzeminski.vimaal.commands.TextChangeInProgress
+import it.krzeminski.vimaal.commands.TextChangeType.DELETE_LINE
 
 class VimShortcutTranslator(
         private val textChangeListener: TextChangeListener,
         private var vimState: VimState = VimState()
 ) {
     fun keyPressed(key: Char) {
-        vimState = transformState(vimState, key)
-        vimState = act(vimState)
-    }
-
-    private fun act(vimState: VimState): VimState {
-        if (vimState.keyPressContext == "dd") {
-            textChangeListener.onLinesRemoved(vimState.cursorPosition.row..vimState.cursorPosition.row)
-            return vimState.copy(keyPressContext = "")
+        if (key == 'd') {
+            if (vimState.textChangeInProgress.type == null) {
+                vimState = vimState.copy(textChangeInProgress = TextChangeInProgress(type = DELETE_LINE))
+            } else if (vimState.textChangeInProgress.type == DELETE_LINE) {
+                vimState = vimState.copy(textChangeInProgress = TextChangeInProgress(type = null))
+                textChangeListener.onLinesRemoved(1)
+            }
         }
-        return vimState
     }
 }
+

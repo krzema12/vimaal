@@ -1,5 +1,6 @@
 package it.krzeminski.vimaal
 
 interface TextChangeListener {
-    fun onLinesRemoved(removedLines: IntRange)
+    fun onLinesRemoved(quantity: Int)
 }
+
