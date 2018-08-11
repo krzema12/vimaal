@@ -1,16 +1,18 @@
 package it.krzeminski.vimaal
 
-class StateMachine<StateType, EventType, SideEffectType>(initialState: StateType) {
+import kotlin.reflect.KClass
+
+class StateMachine<StateType : Any, EventType, SideEffectType>(initialState: StateType) {
     var currentState = initialState
         private set
     private val stateToTransitionMapping:
-            MutableMap<StateType, (EventType) -> Transition<StateType, SideEffectType>> = mutableMapOf()
+            MutableMap<KClass<out StateType>, (EventType) -> Transition<StateType, SideEffectType>> = mutableMapOf()
 
     /**
      * Perform a transition from [currentState], triggered by [event].
      */
     fun transition(event: EventType): SideEffectType? {
-        val transition = stateToTransitionMapping[currentState]?.invoke(event)
+        val transition = stateToTransitionMapping[currentState::class]?.invoke(event)
         currentState = transition?.state ?: currentState
         return transition?.sideEffect
     }
@@ -18,7 +20,7 @@ class StateMachine<StateType, EventType, SideEffectType>(initialState: StateType
     /**
      * Checks if any logic was set to go from [state] to any other state.
      */
-    fun containsTransitionFor(state: StateType) = stateToTransitionMapping[state] != null
+    fun containsTransitionFor(state: StateType) = stateToTransitionMapping[state::class] != null
 
     data class Transition<StateType, SideEffectType>(val state: StateType, val sideEffect: SideEffectType?)
 
@@ -26,10 +28,18 @@ class StateMachine<StateType, EventType, SideEffectType>(initialState: StateType
      * Used in DSL during building the state machine, to define a state and transitions from it.
      */
     operator fun StateType.invoke(function: (EventType) -> Transition<StateType, SideEffectType>) {
+        if (stateToTransitionMapping.containsKey(this::class)) {
+            throw IllegalArgumentException("State redefinition during building: ${this}")
+        }
+        stateToTransitionMapping[this::class] = function
+    }
+
+    operator fun <T : StateType> KClass<T>.invoke(function: (EventType, T) -> Transition<StateType, SideEffectType>) {
         if (stateToTransitionMapping.containsKey(this)) {
             throw IllegalArgumentException("State redefinition during building: ${this}")
         }
-        stateToTransitionMapping[this] = function
+        @Suppress("UNCHECKED_CAST") // currentState is of type T because this method defines transitions from state T.
+        stateToTransitionMapping[this] = { eventType -> function(eventType, currentState as T) }
     }
 
     /**
@@ -45,7 +55,7 @@ class StateMachine<StateType, EventType, SideEffectType>(initialState: StateType
             this.copy(sideEffect = sideEffect)
 }
 
-fun <StateType, EventType, SideEffectType> stateMachine(
+fun <StateType : Any, EventType, SideEffectType> stateMachine(
         initialState: StateType,
         initialize: StateMachine<StateType, EventType, SideEffectType>.() -> Unit): StateMachine<StateType, EventType, SideEffectType> {
     val newStateMachine = StateMachine<StateType, EventType, SideEffectType>(initialState = initialState)

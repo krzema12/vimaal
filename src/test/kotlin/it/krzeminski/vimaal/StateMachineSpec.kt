@@ -7,6 +7,7 @@ sealed class MyState {
     object InitialState : MyState()
     object SomeState2 : MyState()
     object SomeState3 : MyState()
+    data class Repeat(val times: Int): MyState()
 }
 
 sealed class MyEvent {
@@ -35,12 +36,19 @@ class StateMachineSpec : SpecnazKotlinJUnit(StateMachine::class.simpleName!!, { 
                 MyState.SomeState2 {
                     when (it) {
                         MyEvent.Back -> go to MyState.InitialState
-                        else -> go to MyState.SomeState3
+                        else -> go to MyState.Repeat(times = 3)
                     }
                 }
 
                 MyState.SomeState3 {
                     go to MyState.SomeState2
+                }
+
+                (MyState.Repeat::class) { it, currentState ->
+                    when (it) {
+                        MyEvent.CharacterEvent('c') -> go to MyState.Repeat(times = currentState.times*2)
+                        else -> go to MyState.SomeState3
+                    }
                 }
             }
         }
@@ -74,6 +82,23 @@ class StateMachineSpec : SpecnazKotlinJUnit(StateMachine::class.simpleName!!, { 
 
                 assertEquals(sideEffect, MySideEffect.SideEffect1)
             }
+
+            it.should("go through parametrized states correctly") {
+                stateMachineUnderTest.transition(MyEvent.CharacterEvent('g'))
+                assertEquals(stateMachineUnderTest.currentState, MyState.SomeState2)
+
+                stateMachineUnderTest.transition(MyEvent.CharacterEvent('x'))
+                assertEquals(stateMachineUnderTest.currentState, MyState.Repeat(times = 3))
+
+                stateMachineUnderTest.transition(MyEvent.CharacterEvent('c'))
+                assertEquals(stateMachineUnderTest.currentState, MyState.Repeat(times = 6))
+
+                stateMachineUnderTest.transition(MyEvent.CharacterEvent('c'))
+                assertEquals(stateMachineUnderTest.currentState, MyState.Repeat(times = 12))
+
+                stateMachineUnderTest.transition(MyEvent.CharacterEvent('u'))
+                assertEquals(stateMachineUnderTest.currentState, MyState.SomeState3)
+            }
         }
     }
 
@@ -100,5 +125,22 @@ class StateMachineSpec : SpecnazKotlinJUnit(StateMachine::class.simpleName!!, { 
             }
         }.withMessageStartingWith("State redefinition during building")
          .withMessageContaining("InitialState")
+
+        it.shouldThrow<IllegalArgumentException>("when parametrized states are repeated") {
+            stateMachine<MyState, MyEvent, MySideEffect>(initialState = MyState.InitialState) {
+                MyState.InitialState {
+                    go to MyState.InitialState
+                }
+
+                MyState.Repeat::class { _, _ ->
+                    go to MyState.InitialState
+                }
+
+                MyState.Repeat::class { _, _ ->
+                    go to MyState.InitialState
+                }
+            }
+        }.withMessageStartingWith("State redefinition during building")
+                .withMessageContaining("Repeat")
     }
 })
