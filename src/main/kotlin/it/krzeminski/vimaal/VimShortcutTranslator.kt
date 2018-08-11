@@ -10,8 +10,9 @@ class VimShortcutTranslator(
     fun keyPressed(key: Char) {
         val sideEffect = vimStateMachine.transition(VimEvent.Character(key))
 
-        if (sideEffect is VimSideEffect.DeleteLine) {
-            textChangeListener.onLinesRemoved(quantity = sideEffect.quantity)
+        when (sideEffect) {
+            is VimSideEffect.DeleteLine -> textChangeListener.onLinesRemoved(quantity = sideEffect.quantity)
+            is VimSideEffect.DeleteCharacter -> textChangeListener.onCharactersRemoved(quantity = sideEffect.quantity)
         }
     }
 
@@ -26,6 +27,7 @@ class VimShortcutTranslator(
     }
 
     sealed class VimSideEffect {
+        data class DeleteCharacter(val quantity: Int) : VimSideEffect()
         data class DeleteLine(val quantity: Int) : VimSideEffect()
     }
 
@@ -37,6 +39,8 @@ class VimShortcutTranslator(
                             go to VimState.RepeatNextAction(
                                     times = "${(it as VimEvent.Character).character}".toInt())
                         VimEvent.Character('d') -> go to VimState.DeleteSomething(times = 1)
+                        VimEvent.Character('x') ->
+                            go to VimState.Initial with VimSideEffect.DeleteCharacter(quantity = 1)
                         else -> go to VimState.Initial
                     }
                 }
@@ -47,6 +51,8 @@ class VimShortcutTranslator(
                             go to VimState.RepeatNextAction(
                                 times = "${currentState.times}${(it as VimEvent.Character).character}".toInt())
                         VimEvent.Character('d') -> go to VimState.DeleteSomething(times = currentState.times)
+                        VimEvent.Character('x') ->
+                            go to VimState.Initial with VimSideEffect.DeleteCharacter(quantity = currentState.times)
                         else -> go to VimState.Initial
                     }
                 }
