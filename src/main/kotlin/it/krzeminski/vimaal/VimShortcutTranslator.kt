@@ -1,5 +1,7 @@
 package it.krzeminski.vimaal
 
+import kotlin.math.max
+
 class VimShortcutTranslator(
         private val textChangeListener: TextChangeListener)
 {
@@ -8,14 +10,15 @@ class VimShortcutTranslator(
     fun keyPressed(key: Char) {
         val sideEffect = vimStateMachine.transition(VimEvent.Character(key))
 
-        if (sideEffect == VimSideEffect.DeleteLine) {
-            textChangeListener.onLinesRemoved(1)
+        if (sideEffect is VimSideEffect.DeleteLine) {
+            textChangeListener.onLinesRemoved(quantity = sideEffect.quantity)
         }
     }
 
     sealed class VimState {
         object Initial : VimState()
-        object DeleteSomething : VimState()
+        data class DeleteSomething(val times: Int) : VimState()
+        data class RepeatNextAction(val times: Int) : VimState()
     }
 
     sealed class VimEvent {
@@ -23,21 +26,35 @@ class VimShortcutTranslator(
     }
 
     sealed class VimSideEffect {
-        object DeleteLine : VimSideEffect()
+        data class DeleteLine(val quantity: Int) : VimSideEffect()
     }
 
     private fun buildVimStateMachine() =
             stateMachine<VimState, VimEvent, VimSideEffect>(initialState = VimState.Initial) {
                 VimState.Initial {
                     when (it) {
-                        VimEvent.Character('d') -> go to VimState.DeleteSomething
+                        in ('0'..'9').map { c -> VimEvent.Character(c) } ->
+                            go to VimState.RepeatNextAction(
+                                    times = "${(it as VimEvent.Character).character}".toInt())
+                        VimEvent.Character('d') -> go to VimState.DeleteSomething(times = 1)
                         else -> go to VimState.Initial
                     }
                 }
 
-                VimState.DeleteSomething {
+                VimState.RepeatNextAction::class { it, currentState ->
                     when (it) {
-                        VimEvent.Character('d') -> go to VimState.Initial with VimSideEffect.DeleteLine
+                        in ('0'..'9').map { c -> VimEvent.Character(c) } ->
+                            go to VimState.RepeatNextAction(
+                                times = "${currentState.times}${(it as VimEvent.Character).character}".toInt())
+                        VimEvent.Character('d') -> go to VimState.DeleteSomething(times = currentState.times)
+                        else -> go to VimState.Initial
+                    }
+                }
+
+                VimState.DeleteSomething::class { it, currentState ->
+                    when (it) {
+                        VimEvent.Character('d') ->
+                            go to VimState.Initial with VimSideEffect.DeleteLine(quantity = max(currentState.times, 1))
                         else -> go to VimState.Initial
                     }
                 }
