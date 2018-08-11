@@ -2,6 +2,7 @@
 *.class
 
 build/
+out/
 
 # Log file
 *.log
