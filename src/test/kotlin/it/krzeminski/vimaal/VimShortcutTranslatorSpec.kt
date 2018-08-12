@@ -3,10 +3,12 @@ package it.krzeminski.vimaal
 import io.mockk.Called
 import io.mockk.spyk
 import io.mockk.verify
+import io.mockk.verifyOrder
 import org.specnaz.kotlin.junit.SpecnazKotlinJUnit
 
 class VimShortcutTranslatorSpec : SpecnazKotlinJUnit(VimShortcutTranslator::class.simpleName!!, { it ->
     lateinit var textChangeListenerMock: TextChangeListener
+    lateinit var navigationListener: NavigationListener
     lateinit var vimShortcutTranslator: VimShortcutTranslator
 
     fun keysPressed(keys: String) =
@@ -14,7 +16,8 @@ class VimShortcutTranslatorSpec : SpecnazKotlinJUnit(VimShortcutTranslator::clas
 
     it.beginsEach {
         textChangeListenerMock = spyk()
-        vimShortcutTranslator = VimShortcutTranslator(textChangeListenerMock)
+        navigationListener = spyk()
+        vimShortcutTranslator = VimShortcutTranslator(textChangeListenerMock, navigationListener)
     }
 
     it.describes("deleting") {
@@ -49,10 +52,17 @@ class VimShortcutTranslatorSpec : SpecnazKotlinJUnit(VimShortcutTranslator::clas
                 verify(exactly = 1) { textChangeListenerMock.onLinesRemoved(quantity = 123) }
             }
 
-            it.should("delete once when '0dd' is pressed") {
+            it.should("move to the beginning of the line and delete one line when '0dd' is pressed") {
                 keysPressed("0dd")
 
-                verify(exactly = 1) { textChangeListenerMock.onLinesRemoved(quantity = 1) }
+                verify(exactly = 1) {
+                    navigationListener.goToBeginningOfLine()
+                    textChangeListenerMock.onLinesRemoved(quantity = 1)
+                }
+                verifyOrder {
+                    navigationListener.goToBeginningOfLine()
+                    textChangeListenerMock.onLinesRemoved(quantity = 1)
+                }
             }
         }
 
@@ -80,6 +90,14 @@ class VimShortcutTranslatorSpec : SpecnazKotlinJUnit(VimShortcutTranslator::clas
 
                 verify(exactly = 1) { textChangeListenerMock.onCharactersRemoved(quantity = 123) }
             }
+        }
+    }
+
+    it.describes("navigation") {
+        it.should("move to the beginning of the line when '0' pressed") {
+            keysPressed("0")
+
+            verify(exactly = 1) { navigationListener.goToBeginningOfLine() }
         }
     }
 })
