@@ -10,7 +10,8 @@ I googled `vim cheat sheet` and picked top three results. From these pages, I ex
 
 | Command | Description | Is implemented? |
 |---------|-------------|:---------------:|
-| `h`/`j`/`k`/`l` | Move cursor left/down/up/right | |
+| `h`/`j`/`k`/`l` | Move cursor left/down/up/right | ✓ |
+| `5h`/`5j`/`5k`/`5l` | Move cursor left/down/up/right by 5 characters | ✓ |
 | `H`/`M`/`L` | Move to top/middle/bottom of screen | |
 | `b`/`w` | Previous/next start of word | |
 | `B`/`W` | Previous/next start of word, including punctuation | |

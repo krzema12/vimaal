@@ -14,6 +14,8 @@ class VimShortcutTranslator(
         when (sideEffect) {
             is VimSideEffect.DeleteLine -> textChangeListener.onLinesRemoved(quantity = sideEffect.quantity)
             is VimSideEffect.DeleteCharacter -> textChangeListener.onCharactersRemoved(quantity = sideEffect.quantity)
+            is VimSideEffect.MoveByCharacters ->
+                navigationListener.moveByCharacters(sideEffect.direction, sideEffect.distance)
             is VimSideEffect.GoToBeginningOfLine -> navigationListener.goToBeginningOfLine()
         }
     }
@@ -31,6 +33,7 @@ class VimShortcutTranslator(
     sealed class VimSideEffect {
         data class DeleteCharacter(val quantity: Int) : VimSideEffect()
         data class DeleteLine(val quantity: Int) : VimSideEffect()
+        data class MoveByCharacters(val direction: Direction, val distance: Int) : VimSideEffect()
         object GoToBeginningOfLine : VimSideEffect()
     }
 
@@ -42,6 +45,14 @@ class VimShortcutTranslator(
                         in ('1'..'9').map { c -> VimEvent.Character(c) } ->
                             go to VimState.RepeatNextAction(
                                     times = "${(it as VimEvent.Character).character}".toInt())
+                        VimEvent.Character('h') ->
+                            go to VimState.Initial with VimSideEffect.MoveByCharacters(Direction.LEFT, 1)
+                        VimEvent.Character('j') ->
+                            go to VimState.Initial with VimSideEffect.MoveByCharacters(Direction.DOWN, 1)
+                        VimEvent.Character('k') ->
+                            go to VimState.Initial with VimSideEffect.MoveByCharacters(Direction.UP, 1)
+                        VimEvent.Character('l') ->
+                            go to VimState.Initial with VimSideEffect.MoveByCharacters(Direction.RIGHT, 1)
                         VimEvent.Character('d') -> go to VimState.DeleteSomething(times = 1)
                         VimEvent.Character('x') ->
                             go to VimState.Initial with VimSideEffect.DeleteCharacter(quantity = 1)
@@ -54,6 +65,18 @@ class VimShortcutTranslator(
                         in ('0'..'9').map { c -> VimEvent.Character(c) } ->
                             go to VimState.RepeatNextAction(
                                 times = "${currentState.times}${(it as VimEvent.Character).character}".toInt())
+                        VimEvent.Character('h') ->
+                            go to VimState.Initial with
+                                    VimSideEffect.MoveByCharacters(Direction.LEFT, currentState.times)
+                        VimEvent.Character('j') ->
+                            go to VimState.Initial with
+                                    VimSideEffect.MoveByCharacters(Direction.DOWN, currentState.times)
+                        VimEvent.Character('k') ->
+                            go to VimState.Initial with
+                                    VimSideEffect.MoveByCharacters(Direction.UP, currentState.times)
+                        VimEvent.Character('l') ->
+                            go to VimState.Initial with
+                                    VimSideEffect.MoveByCharacters(Direction.RIGHT, currentState.times)
                         VimEvent.Character('d') -> go to VimState.DeleteSomething(times = currentState.times)
                         VimEvent.Character('x') ->
                             go to VimState.Initial with VimSideEffect.DeleteCharacter(quantity = currentState.times)

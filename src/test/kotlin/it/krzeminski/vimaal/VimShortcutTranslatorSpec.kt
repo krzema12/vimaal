@@ -94,6 +94,39 @@ class VimShortcutTranslatorSpec : SpecnazKotlinJUnit(VimShortcutTranslator::clas
     }
 
     it.describes("navigation") {
+        it.describes("moving by characters") {
+            listOf(
+                    Triple("h", "left", Direction.LEFT),
+                    Triple("j", "down", Direction.DOWN),
+                    Triple("k", "up", Direction.UP),
+                    Triple("l", "right", Direction.RIGHT)
+            ).forEach { case ->
+                it.should("move one character to the ${case.second} when '${case.first}' pressed") {
+                    keysPressed(case.first)
+
+                    verify(exactly = 1) {
+                        navigationListenerMock.moveByCharacters(direction = case.third, distance = 1)
+                    }
+                }
+
+                it.should("move 3 characters to the ${case.second} when '3${case.first}' pressed") {
+                    keysPressed("3${case.first}")
+
+                    verify(exactly = 1) {
+                        navigationListenerMock.moveByCharacters(direction = case.third, distance = 3)
+                    }
+                }
+
+                it.should("move 123 characters to the ${case.second} when '123${case.first}' pressed") {
+                    keysPressed("123${case.first}")
+
+                    verify(exactly = 1) {
+                        navigationListenerMock.moveByCharacters(direction = case.third, distance = 123)
+                    }
+                }
+            }
+        }
+
         it.should("move to the beginning of the line when '0' pressed") {
             keysPressed("0")
 
