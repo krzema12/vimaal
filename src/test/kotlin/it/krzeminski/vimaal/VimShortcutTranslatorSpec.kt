@@ -8,7 +8,7 @@ import org.specnaz.kotlin.junit.SpecnazKotlinJUnit
 
 class VimShortcutTranslatorSpec : SpecnazKotlinJUnit(VimShortcutTranslator::class.simpleName!!, { it ->
     lateinit var textChangeListenerMock: TextChangeListener
-    lateinit var navigationListener: NavigationListener
+    lateinit var navigationListenerMock: NavigationListener
     lateinit var vimShortcutTranslator: VimShortcutTranslator
 
     fun keysPressed(keys: String) =
@@ -16,8 +16,8 @@ class VimShortcutTranslatorSpec : SpecnazKotlinJUnit(VimShortcutTranslator::clas
 
     it.beginsEach {
         textChangeListenerMock = spyk()
-        navigationListener = spyk()
-        vimShortcutTranslator = VimShortcutTranslator(textChangeListenerMock, navigationListener)
+        navigationListenerMock = spyk()
+        vimShortcutTranslator = VimShortcutTranslator(textChangeListenerMock, navigationListenerMock)
     }
 
     it.describes("deleting") {
@@ -56,11 +56,11 @@ class VimShortcutTranslatorSpec : SpecnazKotlinJUnit(VimShortcutTranslator::clas
                 keysPressed("0dd")
 
                 verify(exactly = 1) {
-                    navigationListener.goToBeginningOfLine()
+                    navigationListenerMock.goToBeginningOfLine()
                     textChangeListenerMock.onLinesRemoved(quantity = 1)
                 }
                 verifyOrder {
-                    navigationListener.goToBeginningOfLine()
+                    navigationListenerMock.goToBeginningOfLine()
                     textChangeListenerMock.onLinesRemoved(quantity = 1)
                 }
             }
@@ -97,7 +97,7 @@ class VimShortcutTranslatorSpec : SpecnazKotlinJUnit(VimShortcutTranslator::clas
         it.should("move to the beginning of the line when '0' pressed") {
             keysPressed("0")
 
-            verify(exactly = 1) { navigationListener.goToBeginningOfLine() }
+            verify(exactly = 1) { navigationListenerMock.goToBeginningOfLine() }
         }
     }
 })
