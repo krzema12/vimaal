@@ -16,12 +16,14 @@ class VimShortcutTranslator(
             is VimSideEffect.DeleteCharacter -> textChangeListener.onCharactersRemoved(quantity = sideEffect.quantity)
             is VimSideEffect.MoveByCharacters ->
                 navigationListener.moveByCharacters(sideEffect.direction, sideEffect.distance)
+            is VimSideEffect.GoToLine -> navigationListener.goToLine(sideEffect.lineReference)
             is VimSideEffect.GoToBeginningOfLine -> navigationListener.goToBeginningOfLine()
         }
     }
 
     sealed class VimState {
         object Initial : VimState()
+        data class GoTo(val lineNumber: Int) : VimState()
         data class DeleteSomething(val times: Int) : VimState()
         data class RepeatNextAction(val times: Int) : VimState()
     }
@@ -34,6 +36,7 @@ class VimShortcutTranslator(
         data class DeleteCharacter(val quantity: Int) : VimSideEffect()
         data class DeleteLine(val quantity: Int) : VimSideEffect()
         data class MoveByCharacters(val direction: Direction, val distance: Int) : VimSideEffect()
+        data class GoToLine(val lineReference: LineReference) : VimSideEffect()
         object GoToBeginningOfLine : VimSideEffect()
     }
 
@@ -45,6 +48,9 @@ class VimShortcutTranslator(
                         in ('1'..'9').map { c -> VimEvent.Character(c) } ->
                             go to VimState.RepeatNextAction(
                                     times = "${(it as VimEvent.Character).character}".toInt())
+                        VimEvent.Character('G') ->
+                            go to VimState.Initial with VimSideEffect.GoToLine(LineReference.Last)
+                        VimEvent.Character('g') -> go to VimState.GoTo(lineNumber = 1)
                         VimEvent.Character('h') ->
                             go to VimState.Initial with VimSideEffect.MoveByCharacters(Direction.LEFT, 1)
                         VimEvent.Character('j') ->
@@ -65,6 +71,9 @@ class VimShortcutTranslator(
                         in ('0'..'9').map { c -> VimEvent.Character(c) } ->
                             go to VimState.RepeatNextAction(
                                 times = "${currentState.times}${(it as VimEvent.Character).character}".toInt())
+                        VimEvent.Character('G') ->
+                            go to VimState.Initial with VimSideEffect.GoToLine(LineReference.Number(currentState.times))
+                        VimEvent.Character('g') -> go to VimState.GoTo(lineNumber = currentState.times)
                         VimEvent.Character('h') ->
                             go to VimState.Initial with
                                     VimSideEffect.MoveByCharacters(Direction.LEFT, currentState.times)
@@ -88,6 +97,15 @@ class VimShortcutTranslator(
                     when (it) {
                         VimEvent.Character('d') ->
                             go to VimState.Initial with VimSideEffect.DeleteLine(quantity = max(currentState.times, 1))
+                        else -> go to VimState.Initial
+                    }
+                }
+
+                VimState.GoTo::class { it, currentState ->
+                    when (it) {
+                        VimEvent.Character('g') ->
+                            go to VimState.Initial with
+                                    VimSideEffect.GoToLine(LineReference.Number(currentState.lineNumber))
                         else -> go to VimState.Initial
                     }
                 }

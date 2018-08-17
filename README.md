@@ -15,9 +15,9 @@ The shortcuts are implemented in
 
 | Command | Description | Is implemented? |
 |---------|-------------|:---------------:|
-| `gg` | Move to first line | |
-| `G` | Move to last line | |
-| `5G`/`5gg` | Move to line 5 | |
+| `gg` | Move to first line | ✓ |
+| `G` | Move to last line | ✓ |
+| `5G`/`5gg` | Move to line 5 | ✓ |
 | `h`/`j`/`k`/`l` (repeatable) | Move cursor left/down/up/right | ✓ |
 | `b`/`w` (repeatable) | Previous/next start of word | |
 | `B`/`W` (repeatable) | Previous/next start of word, including punctuation | |

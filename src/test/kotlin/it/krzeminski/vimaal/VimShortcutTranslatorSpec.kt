@@ -94,6 +94,40 @@ class VimShortcutTranslatorSpec : SpecnazKotlinJUnit(VimShortcutTranslator::clas
     }
 
     it.describes("navigation") {
+        it.describes("moving by lines") {
+            it.should("move to the first line when 'gg' pressed") {
+                keysPressed("gg")
+
+                verify(exactly = 1) {
+                    navigationListenerMock.goToLine(LineReference.Number(1))
+                }
+            }
+
+            it.should("move to the 123th line when '123gg' pressed") {
+                keysPressed("123gg")
+
+                verify(exactly = 1) {
+                    navigationListenerMock.goToLine(LineReference.Number(123))
+                }
+            }
+
+            it.should("move to the last line when 'G' pressed") {
+                keysPressed("G")
+
+                verify(exactly = 1) {
+                    navigationListenerMock.goToLine(LineReference.Last)
+                }
+            }
+
+            it.should("move to the 123th line when '123G' pressed") {
+                keysPressed("123G")
+
+                verify(exactly = 1) {
+                    navigationListenerMock.goToLine(LineReference.Number(123))
+                }
+            }
+        }
+
         it.describes("moving by characters") {
             listOf(
                     Triple("h", "left", Direction.LEFT),
